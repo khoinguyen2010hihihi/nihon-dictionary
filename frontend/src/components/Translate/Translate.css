@@ -1,0 +1,319 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Google Sans", "Roboto", sans-serif;
+  background-color: #f8f9fa;
+  color: #202124;
+}
+
+.translate-container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* Language Selection Bar */
+.language-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.language-bar select {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #1a73e8;
+  cursor: pointer;
+  padding: 0.5rem;
+  min-width: 120px;
+}
+
+.language-bar select:focus {
+  outline: none;
+}
+
+.language-bar select option {
+  color: #202124;
+}
+
+.swap-btn {
+  background: transparent;
+  border: none;
+  color: #5f6368;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swap-btn:hover {
+  background-color: #f1f3f4;
+  color: #1a73e8;
+}
+
+/* Translation Box */
+.translate-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  min-height: 300px;
+}
+
+.translate-box textarea {
+  border: none;
+  padding: 1.5rem;
+  font-size: 1.1rem;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  color: #202124;
+  min-height: 300px;
+}
+
+.translate-box textarea:focus {
+  outline: none;
+}
+
+.translate-box textarea::placeholder {
+  color: #9aa0a6;
+  font-size: 1.1rem;
+}
+
+/* Phần nhập văn bản - bên trái */
+.translate-box textarea:first-child {
+  border-right: 1px solid #e8eaed;
+  background: transparent;
+}
+
+/* Phần kết quả dịch - bên phải */
+.translate-box textarea[readonly] {
+  background-color: #f8f9fa;
+  color: #202124;
+  cursor: default;
+}
+
+/* Bottom Bar với nút dịch và các tùy chọn */
+.bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: -1rem;
+}
+
+.bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.char-count {
+  color: #5f6368;
+  font-size: 0.9rem;
+}
+
+.translate-btn {
+  background: #1a73e8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(26, 115, 232, 0.3);
+  min-width: 80px;
+}
+
+.translate-btn:hover {
+  background: #1557b0;
+  box-shadow: 0 4px 8px rgba(26, 115, 232, 0.4);
+}
+
+.translate-btn:disabled {
+  background: #f1f3f4;
+  color: #9aa0a6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* History Section */
+.history {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+  overflow: hidden;
+}
+
+.history-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e8eaed;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-header h3 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #202124;
+  margin: 0;
+}
+
+.history-icon {
+  width: 20px;
+  height: 20px;
+  background: #fbbc04;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.history-content {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.history-item:hover {
+  background-color: #f8f9fa;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item p {
+  margin: 0 0 0.5rem 0;
+  color: #202124;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.history-item b {
+  font-weight: 500;
+}
+
+.history-item span {
+  font-size: 0.85rem;
+  color: #5f6368;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Add Translation Button */
+.add-translation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1a73e8;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  border-top: 1px solid #e8eaed;
+  transition: background-color 0.2s ease;
+}
+
+.add-translation:hover {
+  background-color: #f8f9fa;
+}
+
+.add-translation::before {
+  content: "+";
+  width: 20px;
+  height: 20px;
+  background: #1a73e8;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 300;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .translate-container {
+    margin: 1rem auto;
+    padding: 0 0.5rem;
+  }
+
+  .translate-box {
+    grid-template-columns: 1fr;
+  }
+
+  .translate-box textarea:first-child {
+    border-right: none;
+    border-bottom: 1px solid #e8eaed;
+  }
+
+  .language-bar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .bottom-bar {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .translate-btn {
+    width: 100%;
+  }
+}
+
+/* Scrollbar styling */
+.history-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-content::-webkit-scrollbar-track {
+  background: #f1f3f4;
+}
+
+.history-content::-webkit-scrollbar-thumb {
+  background: #dadce0;
+  border-radius: 3px;
+}
+
+.history-content::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
+}

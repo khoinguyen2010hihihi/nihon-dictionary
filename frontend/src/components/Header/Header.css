@@ -1,0 +1,99 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f4f6f9;
+  padding: 10px 30px;
+  border-bottom: 1px solid #ddd;
+}
+
+.header-left h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn.login {
+  background: #1877f2;
+  color: white;
+  border: none;
+}
+
+.btn.login:hover {
+  background: #145db2;
+}
+
+.btn.register {
+  background: transparent;
+  border: 1px solid #1877f2;
+  color: #1877f2;
+}
+
+.btn.register:hover {
+  background: #eaf2ff;
+}
+
+.flag-btn {
+  font-size: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 5px 0;
+  min-width: 120px;
+}
+
+.dropdown-content span {
+  display: block;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-content span:hover {
+  background: #f0f0f0;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.icon {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.icon.bell {
+  color: #1877f2;
+}
+
+.icon.fire {
+  color: orange;
+}

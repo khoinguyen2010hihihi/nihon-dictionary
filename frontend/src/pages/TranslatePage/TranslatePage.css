@@ -1,0 +1,56 @@
+/* Tổng thể trang */
+.translate-page {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa; /* nền nhẹ */
+}
+
+/* Sidebar bên trái */
+.translate-page .sidebar {
+  color: white;
+  padding: 20px;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Main content */
+.translate-page .main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header ở trên cùng */
+.translate-page .main-content > header,
+.translate-page .main-content > .header {
+  background-color: #ffffff;
+  padding: 15px 25px;
+  border-bottom: 1px solid #ddd;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Footer ở dưới cùng */
+.translate-page .main-content > footer,
+.translate-page .main-content > .footer {
+  background-color: #ffffff;
+  padding: 10px 20px;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
+/* Vùng content */
+.translate-page .content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* để Translate box dính trên */
+  padding: 30px;
+}
+
+/* Translate box căn giữa */
+.translate-page .content > * {
+  width: 100%;
+  max-width: 800px;
+}

@@ -1,0 +1,37 @@
+/* Toàn bộ layout */
+.homepage {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Sidebar cố định bên trái */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 220px; /* chiều rộng sidebar */
+  background-color: #3e67d6;
+  color: white;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Nội dung chính nằm cạnh sidebar */
+.main-content {
+  margin-left: 220px; /* đúng bằng sidebar */
+  width: calc(100% - 220px); /* chiếm hết phần còn lại */
+  display: flex;
+  flex-direction: column;
+  background: #f9f9f9;
+  min-height: 100vh;
+}
+
+/* Phần giữa header và footer */
+.content {
+  flex: 1;
+  padding: 20px;
+  background: #f9f9f9;
+  box-sizing: border-box;
+}
