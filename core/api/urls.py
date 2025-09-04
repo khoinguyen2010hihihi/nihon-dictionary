@@ -4,6 +4,9 @@ from .history import push_history, history
 from .favorites import toggle_favorite, FavoritesView
 from .flashcards import create_flashcard, add_to_flashcard, FlashcardDetail
 from .auth import RegisterView, me
+from .kanji import kanji_detail
+from .jlpt import JLPTWordListView
+from .quiz import mcq_quiz
 
 urlpatterns = [
     path("search/", SearchView.as_view()),
@@ -22,4 +25,8 @@ urlpatterns = [
 
     path("auth/register/", RegisterView.as_view()),
     path("auth/me/", me),
+
+    path("kanji/<str:char>/", kanji_detail),
+    path("jlpt/<str:level>/words/", JLPTWordListView.as_view()),
+    path("jlpt/mcq/", mcq_quiz),
 ]
