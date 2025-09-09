@@ -3,9 +3,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Q
 
-from core.models import Word
+from core.models import Word, WordMeaning, ExampleSentence
 from core.serializers.word import WordSerializer
 from core.services.ingest import upsert_from_jisho
+from django.db.models import Prefetch
 
 class SearchView(generics.ListAPIView):
     serializer_class = WordSerializer
@@ -15,11 +16,20 @@ class SearchView(generics.ListAPIView):
         q = (self.request.query_params.get("q") or "").strip()
         if not q:
             return Word.objects.none()
-        qs = Word.objects.filter(Q(kanji__icontains=q) | Q(kana__icontains=q))
+
+        base = Word.objects.all().prefetch_related(
+            Prefetch(
+                "meanings",
+                queryset=WordMeaning.objects.all().prefetch_related("examples")
+            )
+        )
+
+        qs = base.filter(Q(kanji__icontains=q) | Q(kana__icontains=q))
         if qs.exists():
             return qs
+
         words = upsert_from_jisho(q)
-        return Word.objects.filter(id__in=[w.id for w in words])
+        return base.filter(id__in=[w.id for w in words])
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])

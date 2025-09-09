@@ -20,25 +20,6 @@ class WordMeaning(models.Model):
     meaning = models.TextField()
     example_sentence = models.TextField(null=True, blank=True)
 
-
-class ExampleSentence(models.Model):
-    meaning = models.ForeignKey(
-        WordMeaning, on_delete=models.CASCADE, related_name="examples"
-    )
-    jp = models.TextField()                      # câu JP
-    en = models.TextField(null=True, blank=True) # dịch EN (nếu có)
-    source = models.CharField(max_length=32, default="tatoeba")
-    source_id = models.CharField(max_length=64, null=True, blank=True, db_index=True)
-    added_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [
-            # Tránh trùng câu trong cùng một meaning
-            models.UniqueConstraint(
-                fields=["meaning", "jp", "en"], name="uq_example_unique_text"
-            )
-        ]
-
 class SearchHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='searches')
     word = models.ForeignKey(Word, on_delete=models.CASCADE)
@@ -58,3 +39,25 @@ class Flashcard(models.Model):
 class FlashcardWord(models.Model):
     flashcard = models.ForeignKey(Flashcard, on_delete=models.CASCADE, related_name='items')
     word = models.ForeignKey(Word, on_delete=models.CASCADE)
+
+# core/models.py
+from django.db import models
+
+class ExampleSentence(models.Model):
+    meaning = models.ForeignKey(
+        'core.WordMeaning', on_delete=models.CASCADE, related_name='examples'
+    )
+    jp = models.TextField()                         # câu JP
+    en = models.TextField(null=True, blank=True)    # câu EN (nếu có)
+    source = models.CharField(max_length=32, default='tatoeba')
+    source_id = models.CharField(max_length=64, null=True, blank=True, db_index=True)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            # Nếu source_id có giá trị (Tatoeba có id), unique theo id là đủ.
+            models.UniqueConstraint(
+                fields=['meaning', 'source', 'source_id'],
+                name='uq_example_by_sourceid'
+            ),
+        ]
