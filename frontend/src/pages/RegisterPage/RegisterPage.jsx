@@ -15,8 +15,9 @@ import "./RegisterPage.css";
 const API_BASE = import.meta?.env?.VITE_API_BASE || "http://127.0.0.1:8888";
 
 export default function RegisterPage() {
-  const [name, setName] = useState(""); // họ và tên
-  const [email, setEmail] = useState(""); // dùng làm username
+  const [fullName, setFullName] = useState(""); // Họ và tên
+  const [username, setUsername] = useState(""); // BẮT BUỘC theo bảng
+  const [email, setEmail] = useState(""); // TÙY CHỌN (blank được)
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -24,11 +25,11 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const [serverErr, setServerErr] = useState(""); // lỗi từ BE
+  const [serverErr, setServerErr] = useState("");
 
   const navigate = useNavigate();
 
-  // Gom lỗi validator DRF thành chuỗi dễ đọc
+  // Gom lỗi DRF
   const extractErrorMsg = (errObj) => {
     if (!errObj) return "";
     if (typeof errObj === "string") return errObj;
@@ -42,8 +43,8 @@ export default function RegisterPage() {
     e.preventDefault();
     setServerErr("");
 
-    if (!name || !email || !password || !confirmPassword) {
-      return setServerErr("Vui lòng nhập đầy đủ thông tin!");
+    if (!fullName || !username || !password || !confirmPassword) {
+      return setServerErr("Vui lòng nhập đầy đủ các trường bắt buộc (*).");
     }
     if (password.length < 6) {
       return setServerErr("Mật khẩu tối thiểu 6 ký tự.");
@@ -52,23 +53,22 @@ export default function RegisterPage() {
       return setServerErr("Mật khẩu không khớp!");
     }
 
-    // tách họ tên đơn giản
-    const [first_name, ...rest] = name.trim().split(" ");
+    // Tách họ tên (đơn giản)
+    const [first_name, ...rest] = fullName.trim().split(" ");
     const last_name = rest.join(" ");
 
-    // payload khớp RegisterSerializer bên Django
+    // Khớp serializer/back-end: username (bắt buộc), email (optional), role default 'user'
     const payload = {
-      username: email, // dùng email làm username
-      email,
+      username, // <- BẮT BUỘC, unique
+      email: email || "", // <- Có thể rỗng
       password,
       first_name,
       last_name,
-      role: "user", // mở nếu BE có field role
+      role: "user", // <- choices: user/admin, default 'user'
     };
 
     try {
       setLoading(true);
-
       const res = await fetch(`${API_BASE}/api/auth/register/`, {
         method: "POST",
         headers: {
@@ -79,25 +79,19 @@ export default function RegisterPage() {
       });
 
       if (!res.ok) {
-        // cố gắng đọc JSON lỗi từ DRF
         let msg = `${res.status} ${res.statusText}`;
         try {
-          const errJson = await res.json();
-          msg = extractErrorMsg(errJson) || msg;
-        } catch (_) {}
+          msg = extractErrorMsg(await res.json()) || msg;
+        } catch {}
         throw new Error(msg);
       }
 
-      // { user, access, refresh }
-      const json = await res.json();
+      // Tuỳ backend: có thể trả { user, access, refresh }.
+      // Ở luồng “đăng ký xong → sang login”, KHÔNG lưu token tại đây:
+      // const json = await res.json();
+      // (Nếu muốn auto-login, có thể lưu json.access/json.refresh + json.user rồi navigate("/"))
 
-      // Lưu token để đăng nhập ngay
-      localStorage.setItem("access", json.access);
-      localStorage.setItem("refresh", json.refresh);
-      localStorage.setItem("user", JSON.stringify(json.user));
-
-      // Điều hướng (tùy bạn muốn đi đâu)
-      navigate("/login"); // hoặc navigate("/login")
+      navigate("/login", { replace: true });
     } catch (e) {
       setServerErr(e.message || "Đăng ký thất bại");
     } finally {
@@ -108,7 +102,7 @@ export default function RegisterPage() {
   return (
     <div className="register-container">
       <div className="register-box">
-        {/* Logo/Brand */}
+        {/* Brand */}
         <div className="brand-section">
           <div className="brand-logo">
             <FaUser />
@@ -117,13 +111,12 @@ export default function RegisterPage() {
           <p className="brand-subtitle">Đăng ký để bắt đầu hành trình</p>
         </div>
 
-        {/* Social Login (placeholder) */}
+        {/* Social (placeholder) */}
         <div className="social-login">
           <button type="button" className="social-btn google">
             <FaGoogle />
             <span>Đăng ký với Google</span>
           </button>
-
           <button type="button" className="social-btn apple">
             <FaApple />
             <span>Đăng ký với Apple</span>
@@ -134,20 +127,20 @@ export default function RegisterPage() {
           <span>hoặc</span>
         </div>
 
-        {/* Error từ server */}
+        {/* Error */}
         {serverErr && <div className="server-error">{serverErr}</div>}
 
-        {/* Register Form */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="register-form" noValidate>
           <div className="form-group">
-            <label className="form-label">Họ và tên</label>
+            <label className="form-label">Họ và tên *</label>
             <div className="input-group">
               <FaUser className="input-icon" />
               <input
                 type="text"
                 placeholder="Nhập họ và tên của bạn"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className="form-input"
                 autoComplete="name"
                 required
@@ -156,23 +149,38 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">Tên đăng nhập (username) *</label>
             <div className="input-group">
-              <FaEnvelope className="input-icon" />
+              <FaUser className="input-icon" />
               <input
-                type="email"
-                placeholder="example@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                placeholder="Tên đăng nhập (chỉ chữ/số và @/./+/-/_ )"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="form-input"
-                autoComplete="email"
+                autoComplete="username"
                 required
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Mật khẩu</label>
+            <label className="form-label">Email (không bắt buộc)</label>
+            <div className="input-group">
+              <FaEnvelope className="input-icon" />
+              <input
+                type="email"
+                placeholder="example@gmail.com (có thể bỏ trống)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="form-input"
+                autoComplete="email"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Mật khẩu *</label>
             <div className="input-group">
               <FaLock className="input-icon" />
               <input
@@ -197,7 +205,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Xác nhận mật khẩu</label>
+            <label className="form-label">Xác nhận mật khẩu *</label>
             <div className="input-group">
               <FaLock className="input-icon" />
               <input
@@ -240,7 +248,6 @@ export default function RegisterPage() {
           Đã có tài khoản? <Link to="/login">Đăng nhập ngay</Link>
         </p>
 
-        {/* Footer */}
         <div className="footer">
           <p>
             Bằng việc đăng ký, bạn xác nhận rằng bạn đã đọc và hiểu{" "}

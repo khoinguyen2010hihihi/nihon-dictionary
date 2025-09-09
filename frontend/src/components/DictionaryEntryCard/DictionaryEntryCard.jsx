@@ -1,599 +1,581 @@
-import { useState } from "react";
+// src/components/DictionarySearchAll.jsx
+import React, { useState } from "react";
 
-const API = "http://127.0.0.1:8888";
+const API_BASE = import.meta?.env?.VITE_API_BASE || "http://127.0.0.1:8888";
 
-/** Badge helper */
-function Badge({ children, style = {} }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        borderRadius: "9999px",
-        padding: "4px 10px",
-        fontSize: "12px",
-        fontWeight: "500",
-        border: "1px solid",
-        ...style,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-function getJlptBadgeStyle(level) {
-  switch (level) {
-    case "N5":
-      return {
-        backgroundColor: "#f0fdf4",
-        color: "#166534",
-        borderColor: "#bbf7d0",
-      };
-    case "N4":
-      return {
-        backgroundColor: "#ecfeff",
-        color: "#0e7490",
-        borderColor: "#a5f3fc",
-      };
-    case "N3":
-      return {
-        backgroundColor: "#fefce8",
-        color: "#a16207",
-        borderColor: "#fde047",
-      };
-    case "N2":
-      return {
-        backgroundColor: "#fff7ed",
-        color: "#c2410c",
-        borderColor: "#fed7aa",
-      };
-    case "N1":
-      return {
-        backgroundColor: "#fef2f2",
-        color: "#dc2626",
-        borderColor: "#fecaca",
-      };
-    default:
-      return {
-        backgroundColor: "#f8fafc",
-        color: "#475569",
-        borderColor: "#e2e8f0",
-      };
-  }
-}
-
-/** Search Result Card */
-function SearchResultCard({ word }) {
-  // Deduplicate meanings by content
-  const uniqueMeanings =
-    word.meanings?.reduce((acc, curr) => {
-      if (!acc.find((m) => m.meaning === curr.meaning)) {
-        acc.push(curr);
-      }
-      return acc;
-    }, []) || [];
-
-  return (
-    <div
-      style={{
-        backgroundColor: "white",
-        borderRadius: "12px",
-        border: "1px solid #dbeafe",
-        padding: "24px",
-        marginBottom: "16px",
-        // boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-        transition: "all 0.2s ease",
-        cursor: "default",
-      }}
-      onMouseEnter={(e) => {
-        e.target.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.15)";
-        e.target.style.borderColor = "#93c5fd";
-      }}
-      onMouseLeave={(e) => {
-        // e.target.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
-        e.target.style.borderColor = "#dbeafe";
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "16px",
-          marginBottom: "16px",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "8px",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "24px",
-                fontFamily: "serif",
-                color: "#1e293b",
-                margin: 0,
-                fontWeight: "normal",
-              }}
-            >
-              {word.kanji || word.kana}
-            </h3>
-            {word.kanji && (
-              <div
-                style={{
-                  fontSize: "18px",
-                  color: "#2563eb",
-                  fontWeight: "500",
-                }}
-              >
-                {word.kana}
-              </div>
-            )}
-          </div>
-
-          {/* Badges */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            {word.parts_of_speech && (
-              <Badge
-                style={{
-                  backgroundColor: "#eff6ff",
-                  color: "#1d4ed8",
-                  borderColor: "#bfdbfe",
-                }}
-              >
-                {word.parts_of_speech}
-              </Badge>
-            )}
-            {word.jlpt_level && (
-              <Badge style={getJlptBadgeStyle(word.jlpt_level)}>
-                JLPT {word.jlpt_level}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* ID Badge */}
-        <Badge
-          style={{
-            backgroundColor: "#f1f5f9",
-            color: "#475569",
-            borderColor: "#e2e8f0",
-          }}
-        >
-          #{word.id}
-        </Badge>
-      </div>
-
-      {/* Meanings */}
-      {uniqueMeanings.length > 0 && (
-        <div>
-          <h4
-            style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#2563eb",
-              marginBottom: "12px",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              margin: "0 0 12px 0",
-            }}
-          >
-            Nghĩa ({uniqueMeanings.length})
-          </h4>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {uniqueMeanings.map((meaning, idx) => (
-              <li
-                key={meaning.id}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "12px",
-                  marginBottom: "8px",
-                }}
-              >
-                <span
-                  style={{
-                    flexShrink: 0,
-                    width: "20px",
-                    height: "20px",
-                    backgroundColor: "#eff6ff",
-                    color: "#2563eb",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginTop: "2px",
-                  }}
-                >
-                  {idx + 1}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <p
-                    style={{
-                      color: "#374151",
-                      lineHeight: "1.6",
-                      margin: 0,
-                    }}
-                  >
-                    {meaning.meaning}
-                  </p>
-                  {meaning.example_sentence && (
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: "#6b7280",
-                        fontStyle: "italic",
-                        marginTop: "4px",
-                        margin: "4px 0 0 0",
-                      }}
-                    >
-                      Ví dụ: {meaning.example_sentence}
-                    </p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Loading state */
-function LoadingState() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "64px 0",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          color: "#2563eb",
-        }}
-      >
-        <div
-          style={{
-            width: "24px",
-            height: "24px",
-            border: "2px solid #bfdbfe",
-            borderTopColor: "#2563eb",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        ></div>
-        <span style={{ fontWeight: "500" }}>Đang tìm kiếm...</span>
-      </div>
-      <style>
-        {`
-          @keyframes spin {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-        `}
-      </style>
-    </div>
-  );
-}
-
-/** Empty state */
-function EmptyState({ query }) {
-  return (
-    <div style={{ textAlign: "center", padding: "64px 0" }}>
-      <div
-        style={{
-          width: "64px",
-          height: "64px",
-          margin: "0 auto 16px",
-          backgroundColor: "#eff6ff",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <span style={{ fontSize: "32px" }}>📖</span>
-      </div>
-      <h3
-        style={{
-          fontSize: "20px",
-          fontWeight: "500",
-          color: "#374151",
-          marginBottom: "8px",
-          margin: "0 0 8px 0",
-        }}
-      >
-        Không tìm thấy kết quả
-      </h3>
-      <p style={{ color: "#6b7280", margin: 0 }}>
-        Không có từ nào phù hợp với "
-        <span style={{ fontWeight: "500" }}>{query}</span>"
-      </p>
-    </div>
-  );
-}
-
-/** Error state */
-function ErrorState({ message }) {
-  return (
-    <div
-      style={{
-        backgroundColor: "#fef2f2",
-        border: "1px solid #fecaca",
-        borderRadius: "12px",
-        padding: "24px",
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          width: "48px",
-          height: "48px",
-          margin: "0 auto 16px",
-          backgroundColor: "#fee2e2",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <span style={{ fontSize: "20px" }}>⚠️</span>
-      </div>
-      <h3
-        style={{
-          fontWeight: "500",
-          color: "#b91c1c",
-          marginBottom: "8px",
-          margin: "0 0 8px 0",
-        }}
-      >
-        Có lỗi xảy ra
-      </h3>
-      <p style={{ color: "#dc2626", fontSize: "14px", margin: 0 }}>{message}</p>
-    </div>
-  );
-}
-
-export default function SearchList() {
+export default function DictionaryEntryCard() {
   const [q, setQ] = useState("");
-  const [data, setData] = useState(null);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [nextUrl, setNextUrl] = useState(null);
+  const [prevUrl, setPrevUrl] = useState(null);
+  const [addingToFlashcard, setAddingToFlashcard] = useState(new Set());
 
-  const handleSearch = async () => {
-    if (!q.trim()) return;
+  const styles = {
+    wrap: {
+      maxWidth: 1000,
+      margin: "0 auto",
+      padding: "32px 20px",
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #f8faff 0%, #e3f2fd 100%)",
+      fontFamily:
+        "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    },
+    header: {
+      textAlign: "center",
+      marginBottom: 40,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: 800,
+      color: "#1e3a8a",
+      margin: "0 0 8px 0",
+      letterSpacing: "-0.02em",
+    },
+    subtitle: {
+      fontSize: 16,
+      color: "#64748b",
+      margin: 0,
+    },
+    searchContainer: {
+      background: "white",
+      borderRadius: 20,
+      padding: 24,
+      boxShadow: "0 4px 20px rgba(59, 130, 246, 0.08)",
+      marginBottom: 32,
+      border: "1px solid #e3f2fd",
+    },
+    searchRow: {
+      display: "flex",
+      gap: 12,
+      alignItems: "stretch",
+    },
+    input: {
+      flex: 1,
+      padding: "16px 20px",
+      border: "2px solid #e3f2fd",
+      borderRadius: 16,
+      fontSize: 16,
+      background: "#fafbff",
+      outline: "none",
+      transition: "all 0.2s ease",
+      fontFamily: "inherit",
+      color: "#0f172a",
+    },
+    inputFocused: {
+      borderColor: "#3b82f6",
+      background: "#fff",
+      transform: "translateY(-1px)",
+      boxShadow: "0 4px 12px rgba(59, 130, 246, 0.15)",
+    },
+    btn: {
+      padding: "16px 28px",
+      border: "none",
+      borderRadius: 16,
+      background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+      color: "#fff",
+      fontWeight: 700,
+      fontSize: 16,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+    },
+    btnHover: {
+      transform: "translateY(-2px)",
+      boxShadow: "0 6px 16px rgba(59, 130, 246, 0.4)",
+    },
+    btnDisabled: {
+      opacity: 0.6,
+      cursor: "not-allowed",
+      transform: "none",
+    },
+    error: {
+      color: "#dc2626",
+      background: "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)",
+      border: "1px solid #fecaca",
+      padding: "16px 20px",
+      borderRadius: 16,
+      marginBottom: 20,
+      fontSize: 15,
+      fontWeight: 500,
+    },
+    noResults: {
+      textAlign: "center",
+      padding: "40px 20px",
+      color: "#64748b",
+      fontSize: 16,
+    },
+    card: {
+      background: "white",
+      borderRadius: 20,
+      padding: 28,
+      marginBottom: 20,
+      boxShadow: "0 4px 20px rgba(59, 130, 246, 0.08)",
+      border: "1px solid #e3f2fd",
+      transition: "all 0.2s ease",
+    },
+    cardHover: {
+      transform: "translateY(-2px)",
+      boxShadow: "0 8px 32px rgba(59, 130, 246, 0.12)",
+    },
+    cardHeader: {
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      borderBottom: "2px solid #e3f2fd",
+      paddingBottom: 20,
+      marginBottom: 24,
+      gap: 16,
+    },
+    cardHeaderContent: {
+      flex: 1,
+    },
+    word: {
+      fontSize: 36,
+      fontWeight: 800,
+      color: "#1e3a8a",
+      margin: "0 0 8px 0",
+      lineHeight: 1.2,
+      letterSpacing: "-0.02em",
+    },
+    kana: {
+      fontSize: 18,
+      color: "#3b82f6",
+      fontWeight: 500,
+      marginBottom: 16,
+    },
+    metaRow: {
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      flexWrap: "wrap",
+    },
+    badge: {
+      display: "inline-flex",
+      alignItems: "center",
+      height: 32,
+      padding: "0 16px",
+      borderRadius: 16,
+      fontSize: 14,
+      fontWeight: 700,
+      background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+      color: "white",
+      boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)",
+    },
+    posBadge: {
+      background: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+      color: "#475569",
+      border: "1px solid #cbd5e1",
+      boxShadow: "0 2px 4px rgba(71, 85, 105, 0.1)",
+    },
+    addToFlashcardBtn: {
+      padding: "12px 18px",
+      borderRadius: 14,
+      border: "2px solid #3b82f6",
+      background: "white",
+      color: "#3b82f6",
+      fontWeight: 600,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      fontSize: 14,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      whiteSpace: "nowrap",
+      boxShadow: "0 2px 8px rgba(59, 130, 246, 0.15)",
+    },
+    addToFlashcardBtnHover: {
+      background: "#3b82f6",
+      color: "white",
+      transform: "translateY(-1px)",
+      boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+    },
+    addToFlashcardBtnAdding: {
+      opacity: 0.7,
+      cursor: "not-allowed",
+      transform: "none",
+    },
+    addToFlashcardBtnSuccess: {
+      background: "#16a34a",
+      borderColor: "#16a34a",
+      color: "white",
+      boxShadow: "0 2px 8px rgba(22, 163, 74, 0.3)",
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: 700,
+      color: "#1e3a8a",
+      margin: "0 0 16px 0",
+    },
+    meaningList: {
+      margin: 0,
+      paddingLeft: 0,
+      listStyle: "none",
+    },
+    meaningItem: {
+      marginBottom: 20,
+      padding: "16px 20px",
+      background: "#fafbff",
+      borderRadius: 12,
+      border: "1px solid #e3f2fd",
+    },
+    meaningLine: {
+      display: "flex",
+      gap: 12,
+      alignItems: "flex-start",
+    },
+    meaningIdx: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: 28,
+      height: 28,
+      borderRadius: "50%",
+      background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+      color: "white",
+      fontSize: 14,
+      fontWeight: 700,
+      flexShrink: 0,
+    },
+    meaningText: {
+      fontSize: 17,
+      color: "#0f172a",
+      lineHeight: 1.6,
+      fontWeight: 500,
+    },
+    exampleList: {
+      margin: "16px 0 0 0",
+      paddingLeft: 0,
+      listStyle: "none",
+    },
+    exampleItem: {
+      margin: "12px 0",
+      padding: "12px 16px",
+      background: "white",
+      borderRadius: 8,
+      border: "1px solid #e2e8f0",
+    },
+    exJp: {
+      fontWeight: 600,
+      fontSize: 16,
+      color: "#1e3a8a",
+      marginBottom: 4,
+    },
+    exEn: {
+      color: "#64748b",
+      fontSize: 15,
+      lineHeight: 1.5,
+    },
+    pager: {
+      display: "flex",
+      gap: 16,
+      justifyContent: "center",
+      marginTop: 40,
+    },
+    pagerBtn: {
+      padding: "12px 24px",
+      borderRadius: 12,
+      border: "1px solid #e3f2fd",
+      background: "white",
+      color: "#3b82f6",
+      fontWeight: 600,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      fontSize: 15,
+    },
+    pagerBtnHover: {
+      background: "#3b82f6",
+      color: "white",
+      transform: "translateY(-1px)",
+      boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+    },
+  };
 
+  const fetchUrl = async (url) => {
     setLoading(true);
     setErr("");
-    setData(null);
-
     try {
-      const res = await fetch(
-        `${API}/api/search/?q=${encodeURIComponent(q.trim())}`,
-        { headers: { Accept: "application/json" } }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      const json = await res.json();
-      setData(json);
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const detail =
+          json?.detail ||
+          (json &&
+            Object.entries(json)
+              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+              .join(" | "));
+        throw new Error(detail || `${res.status} ${res.statusText}`);
+      }
+
+      const results = Array.isArray(json) ? json : json?.results || [];
+      setItems(results);
+      setNextUrl(json?.next || null);
+      setPrevUrl(json?.previous || null);
     } catch (e) {
-      setErr(e.message || "Lỗi kết nối đến server");
+      setErr(e.message || "Lỗi gọi API");
+      setItems([]);
+      setNextUrl(null);
+      setPrevUrl(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
+  const onSearch = async (e) => {
+    e.preventDefault();
+    if (!q.trim()) return;
+    const url = `${API_BASE}/api/search/?q=${encodeURIComponent(q.trim())}`;
+    fetchUrl(url);
+  };
+
+  const loadNext = () => nextUrl && fetchUrl(nextUrl);
+  const loadPrev = () => prevUrl && fetchUrl(prevUrl);
+
+  const addToFlashcard = async (entry) => {
+    const entryId = entry.id;
+    setAddingToFlashcard((prev) => new Set([...prev, entryId]));
+
+    try {
+      const res = await fetch(`${API_BASE}/api/flashcards/add/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          word_id: entryId,
+          kanji: entry.kanji,
+          kana: entry.kana,
+          meanings: entry.meanings,
+          parts_of_speech: entry.parts_of_speech,
+          jlpt_level: entry.jlpt_level,
+        }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        const detail =
+          json?.detail || json?.message || `${res.status} ${res.statusText}`;
+        throw new Error(detail);
+      }
+
+      // Hiển thị trạng thái thành công trong 2 giây
+      setTimeout(() => {
+        setAddingToFlashcard((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(entryId);
+          return newSet;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error("Error adding to flashcard:", error);
+      alert(`Lỗi thêm vào flashcard: ${error.message}`);
+      setAddingToFlashcard((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(entryId);
+        return newSet;
+      });
     }
   };
 
-  // Handle different response formats
-  const items = Array.isArray(data) ? data : data?.results || [];
-  const hasSearched = data !== null || err || loading;
-
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#f9fafb",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1024px",
-          margin: "0 auto",
-          padding: "32px 16px",
-        }}
-      >
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <h1
+    <div style={styles.wrap}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Từ điển Tiếng Nhật</h1>
+        <p style={styles.subtitle}>Tra cứu từ vựng nhanh chóng và chính xác</p>
+      </div>
+
+      <div style={styles.searchContainer}>
+        <div style={styles.searchRow}>
+          <input
+            style={styles.input}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Nhập từ cần tra (vd: いいえ / いえ / nihon)"
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                onSearch(e);
+              }
+            }}
+            onFocus={(e) => Object.assign(e.target.style, styles.inputFocused)}
+            onBlur={(e) => Object.assign(e.target.style, styles.input)}
+          />
+          <button
             style={{
-              fontSize: "32px",
-              fontWeight: "bold",
-              color: "#1e293b",
-              marginBottom: "8px",
-              margin: "0 0 8px 0",
+              ...styles.btn,
+              ...(loading ? styles.btnDisabled : {}),
+            }}
+            onClick={onSearch}
+            disabled={loading}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                Object.assign(e.target.style, {
+                  ...styles.btn,
+                  ...styles.btnHover,
+                });
+              }
+            }}
+            onMouseLeave={(e) => {
+              Object.assign(e.target.style, {
+                ...styles.btn,
+                ...(loading ? styles.btnDisabled : {}),
+              });
             }}
           >
-            Từ điển Nhật-Việt
-          </h1>
-          <p style={{ color: "#64748b", margin: 0 }}>
-            Tìm kiếm từ vựng tiếng Nhật
-          </p>
-        </div>
-
-        {/* Search Bar */}
-        <div style={{ maxWidth: "512px", margin: "0 auto 32px" }}>
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "8px",
-              border: "1px solid #bfdbfe",
-              // boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-              display: "flex",
-              overflow: "hidden",
-            }}
-          >
-            <input
-              type="text"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Nhập từ tiếng Nhật (kanji, hiragana, katakana)..."
-              style={{
-                flex: 1,
-                padding: "12px 16px",
-                fontSize: "18px",
-                border: 0,
-                outline: "none",
-                backgroundColor: "transparent",
-                color: "#1e293b",
-              }}
-              disabled={loading}
-            />
-            <button
-              onClick={handleSearch}
-              disabled={loading || !q.trim()}
-              style={{
-                padding: "12px 24px",
-                backgroundColor: loading || !q.trim() ? "#93c5fd" : "#2563eb",
-                color: "white",
-                fontWeight: "500",
-                border: 0,
-                cursor: loading || !q.trim() ? "not-allowed" : "pointer",
-                transition: "background-color 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!loading && q.trim()) {
-                  e.target.style.backgroundColor = "#1d4ed8";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading && q.trim()) {
-                  e.target.style.backgroundColor = "#2563eb";
-                }
-              }}
-            >
-              {loading ? "Tìm..." : "Tìm kiếm"}
-            </button>
-          </div>
-        </div>
-
-        {/* Results */}
-        <div>
-          {loading && <LoadingState />}
-
-          {err && <ErrorState message={err} />}
-
-          {!loading && !err && items.length > 0 && (
-            <div>
-              {/* Results header */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: "24px",
-                }}
-              >
-                <h2
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    margin: 0,
-                  }}
-                >
-                  Kết quả tìm kiếm
-                </h2>
-                <span
-                  style={{
-                    fontSize: "14px",
-                    color: "#6b7280",
-                    backgroundColor: "#f1f5f9",
-                    padding: "4px 12px",
-                    borderRadius: "9999px",
-                  }}
-                >
-                  {items.length} từ
-                </span>
-              </div>
-
-              {/* Results list */}
-              <div>
-                {items.map((word) => (
-                  <SearchResultCard key={word.id} word={word} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!loading && !err && items.length === 0 && hasSearched && (
-            <EmptyState query={q} />
-          )}
-
-          {!hasSearched && (
-            <div style={{ textAlign: "center", padding: "64px 0" }}>
-              <div
-                style={{
-                  width: "64px",
-                  height: "64px",
-                  margin: "0 auto 16px",
-                  backgroundColor: "#eff6ff",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span style={{ fontSize: "32px" }}>🔍</span>
-              </div>
-              <h3
-                style={{
-                  fontSize: "20px",
-                  fontWeight: "500",
-                  color: "#374151",
-                  marginBottom: "8px",
-                  margin: "0 0 8px 0",
-                }}
-              >
-                Bắt đầu tìm kiếm
-              </h3>
-              <p style={{ color: "#6b7280", margin: 0 }}>
-                Nhập từ tiếng Nhật vào ô tìm kiếm để bắt đầu
-              </p>
-            </div>
-          )}
+            {loading ? "Đang tìm..." : "Tìm kiếm"}
+          </button>
         </div>
       </div>
+
+      {err && <div style={styles.error}>{err}</div>}
+
+      {!loading && !err && items.length === 0 && q.trim() !== "" && (
+        <div style={styles.noResults}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+          <div>Không tìm thấy kết quả phù hợp</div>
+        </div>
+      )}
+
+      {items.map((entry) => {
+        const title = entry.kanji || entry.kana || "—";
+        const kana = entry.kana || "";
+        const pos = entry.parts_of_speech || "";
+        const jlpt = entry.jlpt_level || "";
+        const isAdding = addingToFlashcard.has(entry.id);
+
+        return (
+          <article
+            key={entry.id}
+            style={styles.card}
+            onMouseEnter={(e) =>
+              Object.assign(e.currentTarget.style, {
+                ...styles.card,
+                ...styles.cardHover,
+              })
+            }
+            onMouseLeave={(e) =>
+              Object.assign(e.currentTarget.style, styles.card)
+            }
+          >
+            <header style={styles.cardHeader}>
+              <div style={styles.cardHeaderContent}>
+                <h2 style={styles.word}>{title}</h2>
+                {kana && <div style={styles.kana}>{kana}</div>}
+
+                <div style={styles.metaRow}>
+                  {jlpt && <span style={styles.badge}>JLPT {jlpt}</span>}
+                  {pos && (
+                    <span style={{ ...styles.badge, ...styles.posBadge }}>
+                      {pos}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                style={{
+                  ...styles.addToFlashcardBtn,
+                  ...(isAdding ? styles.addToFlashcardBtnSuccess : {}),
+                }}
+                onClick={() => addToFlashcard(entry)}
+                disabled={isAdding}
+                onMouseEnter={(e) => {
+                  if (!isAdding) {
+                    Object.assign(e.target.style, {
+                      ...styles.addToFlashcardBtn,
+                      ...styles.addToFlashcardBtnHover,
+                    });
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  Object.assign(e.target.style, {
+                    ...styles.addToFlashcardBtn,
+                    ...(isAdding ? styles.addToFlashcardBtnSuccess : {}),
+                  });
+                }}
+              >
+                {isAdding ? (
+                  <>
+                    <span style={{ fontSize: 16 }}>✓</span>
+                    <span>Đã thêm</span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 18, fontWeight: 700 }}>+</span>
+                    <span>Flashcard</span>
+                  </>
+                )}
+              </button>
+            </header>
+
+            <section>
+              <h3 style={styles.sectionTitle}>Nghĩa của từ</h3>
+              <ol style={styles.meaningList}>
+                {(entry.meanings || []).map((m, idx) => (
+                  <li key={m.id ?? idx} style={styles.meaningItem}>
+                    <div style={styles.meaningLine}>
+                      <span style={styles.meaningIdx}>{idx + 1}</span>
+                      <span style={styles.meaningText}>{m.meaning || "—"}</span>
+                    </div>
+
+                    {Array.isArray(m.examples) && m.examples.length > 0 && (
+                      <ul style={styles.exampleList}>
+                        {m.examples.map((ex) => (
+                          <li key={ex.id} style={styles.exampleItem}>
+                            <div style={styles.exJp}>{ex.jp}</div>
+                            <div style={styles.exEn}>{ex.en}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </article>
+        );
+      })}
+
+      {(prevUrl || nextUrl) && (
+        <div style={styles.pager}>
+          {prevUrl && (
+            <button
+              style={styles.pagerBtn}
+              onClick={loadPrev}
+              onMouseEnter={(e) =>
+                Object.assign(e.target.style, {
+                  ...styles.pagerBtn,
+                  ...styles.pagerBtnHover,
+                })
+              }
+              onMouseLeave={(e) =>
+                Object.assign(e.target.style, styles.pagerBtn)
+              }
+            >
+              ← Trang trước
+            </button>
+          )}
+          {nextUrl && (
+            <button
+              style={styles.pagerBtn}
+              onClick={loadNext}
+              onMouseEnter={(e) =>
+                Object.assign(e.target.style, {
+                  ...styles.pagerBtn,
+                  ...styles.pagerBtnHover,
+                })
+              }
+              onMouseLeave={(e) =>
+                Object.assign(e.target.style, styles.pagerBtn)
+              }
+            >
+              Trang sau →
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

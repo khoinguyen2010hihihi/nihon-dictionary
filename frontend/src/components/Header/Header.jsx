@@ -25,7 +25,7 @@ function Header() {
       <div className="header-right">
         {user ? (
           <>
-            <span className="username">Xin chào, {user.last_name}</span>
+            <span className="username">Xin chào {user.username}</span>
             <button className="btn logout" onClick={handleLogout}>
               Đăng xuất
             </button>
