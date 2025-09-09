@@ -1,3 +1,4 @@
+// src/pages/RegisterPage.jsx
 import React, { useState } from "react";
 import {
   FaEnvelope,
@@ -8,29 +9,100 @@ import {
   FaGoogle,
   FaApple,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./RegisterPage.css";
 
-function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+const API_BASE = import.meta?.env?.VITE_API_BASE || "http://127.0.0.1:8888";
+
+export default function RegisterPage() {
+  const [name, setName] = useState(""); // họ và tên
+  const [email, setEmail] = useState(""); // dùng làm username
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [serverErr, setServerErr] = useState(""); // lỗi từ BE
+
+  const navigate = useNavigate();
+
+  // Gom lỗi validator DRF thành chuỗi dễ đọc
+  const extractErrorMsg = (errObj) => {
+    if (!errObj) return "";
+    if (typeof errObj === "string") return errObj;
+    if (Array.isArray(errObj)) return errObj.join(", ");
+    return Object.entries(errObj)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+      .join(" | ");
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerErr("");
+
     if (!name || !email || !password || !confirmPassword) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
-      return;
+      return setServerErr("Vui lòng nhập đầy đủ thông tin!");
+    }
+    if (password.length < 6) {
+      return setServerErr("Mật khẩu tối thiểu 6 ký tự.");
     }
     if (password !== confirmPassword) {
-      alert("Mật khẩu không khớp!");
-      return;
+      return setServerErr("Mật khẩu không khớp!");
     }
-    console.log("Name:", name, "Email:", email, "Password:", password);
-    // TODO: gọi API register tại đây
+
+    // tách họ tên đơn giản
+    const [first_name, ...rest] = name.trim().split(" ");
+    const last_name = rest.join(" ");
+
+    // payload khớp RegisterSerializer bên Django
+    const payload = {
+      username: email, // dùng email làm username
+      email,
+      password,
+      first_name,
+      last_name,
+      role: "user", // mở nếu BE có field role
+    };
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_BASE}/api/auth/register/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        // cố gắng đọc JSON lỗi từ DRF
+        let msg = `${res.status} ${res.statusText}`;
+        try {
+          const errJson = await res.json();
+          msg = extractErrorMsg(errJson) || msg;
+        } catch (_) {}
+        throw new Error(msg);
+      }
+
+      // { user, access, refresh }
+      const json = await res.json();
+
+      // Lưu token để đăng nhập ngay
+      localStorage.setItem("access", json.access);
+      localStorage.setItem("refresh", json.refresh);
+      localStorage.setItem("user", JSON.stringify(json.user));
+
+      // Điều hướng (tùy bạn muốn đi đâu)
+      navigate("/login"); // hoặc navigate("/login")
+    } catch (e) {
+      setServerErr(e.message || "Đăng ký thất bại");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,14 +117,14 @@ function RegisterPage() {
           <p className="brand-subtitle">Đăng ký để bắt đầu hành trình</p>
         </div>
 
-        {/* Social Login */}
+        {/* Social Login (placeholder) */}
         <div className="social-login">
-          <button className="social-btn google">
+          <button type="button" className="social-btn google">
             <FaGoogle />
             <span>Đăng ký với Google</span>
           </button>
 
-          <button className="social-btn apple">
+          <button type="button" className="social-btn apple">
             <FaApple />
             <span>Đăng ký với Apple</span>
           </button>
@@ -62,8 +134,11 @@ function RegisterPage() {
           <span>hoặc</span>
         </div>
 
+        {/* Error từ server */}
+        {serverErr && <div className="server-error">{serverErr}</div>}
+
         {/* Register Form */}
-        <form onSubmit={handleSubmit} className="register-form">
+        <form onSubmit={handleSubmit} className="register-form" noValidate>
           <div className="form-group">
             <label className="form-label">Họ và tên</label>
             <div className="input-group">
@@ -74,6 +149,8 @@ function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="form-input"
+                autoComplete="name"
+                required
               />
             </div>
           </div>
@@ -88,6 +165,8 @@ function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="form-input"
+                autoComplete="email"
+                required
               />
             </div>
           </div>
@@ -102,11 +181,15 @@ function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input"
+                autoComplete="new-password"
+                minLength={6}
+                required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="password-toggle"
+                aria-label="Hiện/ẩn mật khẩu"
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -123,11 +206,15 @@ function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="form-input"
+                autoComplete="new-password"
+                minLength={6}
+                required
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="password-toggle"
+                aria-label="Hiện/ẩn xác nhận mật khẩu"
               >
                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -144,8 +231,8 @@ function RegisterPage() {
             </label>
           </div>
 
-          <button type="submit" className="register-btn">
-            Tạo tài khoản
+          <button type="submit" className="register-btn" disabled={loading}>
+            {loading ? "Đang tạo..." : "Tạo tài khoản"}
           </button>
         </form>
 
@@ -164,5 +251,3 @@ function RegisterPage() {
     </div>
   );
 }
-
-export default RegisterPage;

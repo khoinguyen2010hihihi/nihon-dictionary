@@ -1,20 +1,16 @@
 import React from "react";
-import "./Sidebar.css";
+import { NavLink } from "react-router-dom";
 import {
   FaSearch,
-  FaUsers,
   FaBook,
   FaClipboardList,
   FaBookReader,
   FaEdit,
-  FaLayerGroup,
   FaComments,
-  FaBriefcase,
   FaInfoCircle,
-  FaArrowUp,
   FaCog,
-  FaBlog,
 } from "react-icons/fa";
+import "./Sidebar.css";
 
 function Sidebar() {
   return (
@@ -26,39 +22,86 @@ function Sidebar() {
 
       <ul className="menu">
         <li>
-          <FaSearch /> Tra cứu
+          <NavLink
+            to="/search"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaSearch /> Tra cứu
+          </NavLink>
         </li>
         <li>
-          <FaBook /> Dịch
+          <NavLink
+            to="/translate"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaBook /> Dịch
+          </NavLink>
         </li>
         <li>
-          <FaClipboardList /> JLPT
-        </li>
-        <hr />
-        <li>
-          <FaBookReader /> Từ của tôi
-        </li>
-        <li>
-          <FaEdit /> Luyện đọc
-        </li>
-        <li>
-          <FaClipboardList /> Thi thử
-        </li>
-        <li>
-          <FaComments /> Dịch hội thoại
-        </li>
-        <li>
-          <FaComments /> Hội thoại
-        </li>
-        <li>
-          <FaClipboardList /> Tên tiếng Nhật
+          <NavLink
+            to="/jlpt"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaClipboardList /> JLPT
+          </NavLink>
         </li>
         <hr />
         <li>
-          <FaInfoCircle /> Giới thiệu
+          <NavLink
+            to="/mywords"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaBookReader /> Từ của tôi
+          </NavLink>
         </li>
         <li>
-          <FaCog /> Cài đặt
+          <NavLink
+            to="/reading"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaEdit /> Luyện đọc
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/exam"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaClipboardList /> Thi thử
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/conversation"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaComments /> Hội thoại
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/japanese-name"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaClipboardList /> Tên tiếng Nhật
+          </NavLink>
+        </li>
+        <hr />
+        <li>
+          <NavLink
+            to="/introduce"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaInfoCircle /> Giới thiệu
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <FaCog /> Cài đặt
+          </NavLink>
         </li>
       </ul>
     </div>

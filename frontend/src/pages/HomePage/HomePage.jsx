@@ -4,6 +4,7 @@ import Footer from "../../components/Footer/Footer";
 import SearchBox from "../../components/SearchBox/SearchBox";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import "./HomePage.css";
+import DictionaryEntryCard from "../../components/DictionaryEntryCard/DictionaryEntryCard";
 
 function HomePage() {
   return (
@@ -16,7 +17,8 @@ function HomePage() {
       <div className="main-content">
         <Header />
         <div className="content">
-          <SearchBox />
+          {/* <SearchBox /> */}
+          <DictionaryEntryCard />
         </div>
         <Footer />
       </div>

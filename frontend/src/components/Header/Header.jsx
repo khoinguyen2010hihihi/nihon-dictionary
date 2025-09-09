@@ -1,9 +1,21 @@
 import React from "react";
 import { FaBell, FaFire } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import "./Header.css"; // Import your CSS file
+import { Link, useNavigate } from "react-router-dom";
+import "./Header.css";
 
 function Header() {
+  const navigate = useNavigate();
+
+  // Lấy user từ localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const handleLogout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("user");
+    navigate("/login"); // đưa về trang login
+  };
+
   return (
     <header className="header">
       <div className="header-left">
@@ -11,20 +23,26 @@ function Header() {
       </div>
 
       <div className="header-right">
-        <Link to="/login" className="btn login">
-          Đăng nhập
-        </Link>
-        <Link to="/register" className="btn register">
-          Đăng ký
-        </Link>
+        {user ? (
+          <>
+            <span className="username">Xin chào, {user.last_name}</span>
+            <button className="btn logout" onClick={handleLogout}>
+              Đăng xuất
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="btn login">
+              Đăng nhập
+            </Link>
+            <Link to="/register" className="btn register">
+              Đăng ký
+            </Link>
+          </>
+        )}
 
         <div className="dropdown">
           <button className="flag-btn">🇻🇳</button>
-          <div className="dropdown-content">
-            <span>🇻🇳 Tiếng Việt</span>
-            <span>🇯🇵 日本語</span>
-            <span>🇺🇸 English</span>
-          </div>
         </div>
 
         <FaBell className="icon bell" />
