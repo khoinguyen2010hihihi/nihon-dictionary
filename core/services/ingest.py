@@ -1,30 +1,154 @@
-from .jisho import jisho_search
-from core.models import Word, WordMeaning
-from django.db import transaction
+from __future__ import annotations
 
-def _first(parts): return parts[0] if parts else None
+from django.db import transaction
+from django.db.models import QuerySet
+
+from .jisho import jisho_search
+from .tatoeba import search_examples
+from core.models import Word, WordMeaning, ExampleSentence
+
+
+def _gather_pos(senses: list[dict]) -> str:
+    """
+    Gom tất cả parts_of_speech từ các sense, bỏ trùng nhưng giữ thứ tự.
+    """
+    pos: list[str] = []
+    for s in senses or []:
+        pos.extend(s.get("parts_of_speech", []))
+    # dedupe nhưng giữ thứ tự xuất hiện
+    return ", ".join(dict.fromkeys(pos))
+
+
+def _get_or_create_word(kanji: str | None,
+                        kana: str | None,
+                        parts: str,
+                        jlpt_level: str | None) -> Word:
+    """
+    Lấy bản ghi Word đầu tiên theo (kanji, kana); nếu chưa có thì tạo mới.
+    Tránh MultipleObjectsReturned nếu lỡ có trùng trong DB.
+    """
+    w = (
+        Word.objects.filter(kanji=kanji, kana=kana)
+        .order_by("id")
+        .first()
+    )
+    if w is None:
+        w = Word.objects.create(
+            kanji=kanji,
+            kana=kana,
+            parts_of_speech=parts or "",
+            jlpt_level=jlpt_level,
+            is_cached=True,
+        )
+        return w
+
+    # Cập nhật nhẹ nếu trước đó trống
+    changed = False
+    if parts and not w.parts_of_speech:
+        w.parts_of_speech = parts
+        changed = True
+    if jlpt_level and not w.jlpt_level:
+        w.jlpt_level = jlpt_level
+        changed = True
+    if not w.is_cached:
+        w.is_cached = True
+        changed = True
+    if changed:
+        w.save(update_fields=["parts_of_speech", "jlpt_level", "is_cached"])
+    return w
+
+
+def _upsert_meanings(word: Word, senses: list[dict]) -> list[WordMeaning]:
+    """
+    Tạo các WordMeaning nếu chưa tồn tại (so khớp theo 'meaning' text).
+    Trả về danh sách meanings của từ để dùng cho bước bơm ví dụ.
+    """
+    created_or_existing: list[WordMeaning] = []
+    for s in senses or []:
+        meaning_text = "; ".join(s.get("english_definitions", []))
+        if not meaning_text:
+            continue
+        wm, _ = WordMeaning.objects.get_or_create(word=word, meaning=meaning_text)
+        created_or_existing.append(wm)
+    return created_or_existing
+
+
+def _fill_examples_for_word(word: Word, per_meaning: int = 2) -> None:
+    """
+    Với mỗi meaning của 'word', nếu còn thiếu ví dụ thì nạp tối đa 'per_meaning' câu
+    từ Tatoeba và lưu vào bảng ExampleSentence (tránh trùng).
+    """
+    meanings: QuerySet[WordMeaning] = WordMeaning.objects.filter(word=word).order_by("id")
+    meanings = meanings.prefetch_related("examples")
+
+    # Tổng số câu còn thiếu
+    need_total = 0
+    need_per_meaning: list[tuple[WordMeaning, int]] = []
+    for m in meanings:
+        lacking = max(0, per_meaning - m.examples.count())
+        if lacking > 0:
+            need_per_meaning.append((m, lacking))
+            need_total += lacking
+
+    if need_total == 0:
+        return
+
+    key = word.kanji or word.kana
+    if not key:
+        return
+
+    try:
+        # lấy dư một chút để phòng trùng lặp
+        pool = search_examples(key, limit=need_total * 2)
+    except Exception:
+        pool = []
+
+    # Phân phối đều từ pool vào từng meaning còn thiếu
+    for m, lacking in need_per_meaning:
+        while lacking > 0 and pool:
+            ex = pool.pop(0)
+            ExampleSentence.objects.get_or_create(
+                meaning=m,
+                jp=ex["jp"],
+                en=ex.get("en"),
+                defaults={
+                    "source": "tatoeba",
+                    "source_id": str(ex.get("id") or ""),
+                },
+            )
+            lacking -= 1
+
 
 def upsert_from_jisho(keyword: str) -> list[Word]:
-    data = jisho_search(keyword)
-    words = []
-    with transaction.atomic():
-        for item in data.get("data", []):
-            japanese = _first(item.get("japanese", [])) or {}
-            senses = item.get("senses", [])
-            jlpt = _first(item.get("jlpt", []))  # e.g., 'jlpt-n5'
-            jlpt_level = jlpt.split('-')[-1].upper() if jlpt else None
-            pos_list = _first(item.get("parts_of_speech", [])) or (senses[0]["parts_of_speech"][0] if senses and senses[0]["parts_of_speech"] else "")
+    """
+    Gọi Jisho, upsert Word + WordMeaning, rồi bơm ví dụ vào ExampleSentence.
+    Trả về danh sách Word liên quan tới keyword.
+    """
+    payload = jisho_search(keyword)
+    words: list[Word] = []
 
-            w = Word.objects.create(
-                kanji=japanese.get("word"),
-                kana=japanese.get("reading"),
-                parts_of_speech=pos_list,
-                jlpt_level=jlpt_level,
-                is_cached=True
-            )
-            for s in senses:
-                meaning = "; ".join(s.get("english_definitions", []))
-                example = None
-                WordMeaning.objects.create(word=w, meaning=meaning, example_sentence=example)
+    with transaction.atomic():
+        for item in payload.get("data", []):
+            japanese = (item.get("japanese") or [{}])[0]
+            senses = item.get("senses") or []
+
+            kanji = japanese.get("word")
+            kana = japanese.get("reading")
+            parts = _gather_pos(senses)
+
+            # jlpt: mảng như ["jlpt-n5", ...] -> lấy 'N5'
+            jlpt_level = None
+            for tag in item.get("jlpt", []) or []:
+                if tag.startswith("jlpt-"):
+                    jlpt_level = tag.split("-")[-1].upper()
+                    break
+
+            w = _get_or_create_word(kanji, kana, parts, jlpt_level)
+            _upsert_meanings(w, senses)
             words.append(w)
+
+    # Sau khi meanings đã chắc chắn tồn tại, bơm ví dụ cho mỗi word
+    for w in words:
+        _fill_examples_for_word(w, per_meaning=2)
+
     return words
