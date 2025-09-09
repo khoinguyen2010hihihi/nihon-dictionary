@@ -28,5 +28,5 @@ urlpatterns = [
 
     path("kanji/<str:char>/", kanji_detail),
     path("jlpt/<str:level>/words/", JLPTWordListView.as_view()),
-    path("jlpt/mcq/", mcq_quiz),
+    path("quiz/mcq/", mcq_quiz),
 ]
